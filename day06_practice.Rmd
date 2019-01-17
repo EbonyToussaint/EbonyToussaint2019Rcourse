@@ -1,0 +1,214 @@
+---
+title: "Day 6 Practice"
+output: html_document
+---
+
+# Section 1
+
+1. Load the `french_fries` data set into R by installing/loading the `reshape2` package.
+
+```{r}
+# install.packages("reshape2")
+library(reshape2)
+library(tidyverse)
+ff <- french_fries
+
+```
+
+
+2. Take a quick peek at the data using a few different functions to get a basic feel for the data.
+
+```{r}
+head(ff)
+summary(ff)
+nrow(ff)
+ncol(ff)
+colnames(ff)
+length(ff)
+length(ff[[1]])
+# View(ff)
+```
+
+
+3. Change the first three column names to "week", "oil.type", and "participant"
+
+```{r}
+colnames(ff)
+colnames(ff)[1:3]
+colnames(ff)[1:3] <- c("week", "oil.type", "participant")
+head(ff)
+```
+
+
+4. Locate NAs in the data. Look at a subset of the data where NAs appear. Any patterns? What should be done about these?
+
+```{r}
+summary(ff)
+ff.missingpotato <- ff[is.na(ff$potato), ]
+ff.nomissing <- ff[complete.cases(ff), ]
+ff.anymissing <- ff[!complete.cases(ff), ]
+
+ff.anymissing.dplyr <- filter(ff, is.na(potato)| is.na(buttery) | is.na(grassy) | is.na(rancid) | is.na(painty))
+
+# identical() is very picky!
+ff.anymissing
+ff.anymissing.dplyr
+identical(ff.anymissing.dplyr, ff.anymissing)
+
+```
+
+
+5. Check the data types of all columns. Anything to change? Make those changes.
+
+```{r}
+summary(ff)
+lapply(ff, class)
+head(as.tibble(ff))
+
+# as.data.frame() "cleans up" a tibble
+
+ff$rep.factor <- as.factor(ff$rep)
+ff <- mutate(ff, rep.factor.dplyr = as.factor(rep),
+             week.num = as.numeric(as.character(week))) # dplyr way
+xtabs(~ week + week.num, ff)
+summary(ff)
+```
+
+
+6. Some of the factor levels look like numbers. Why is this potentially "dangerous"? Change these to be more obvious as factor levels and not numeric data.
+
+```{r}
+levels(ff$rep.factor.dplyr)
+levels(ff$rep.factor.dplyr) <- c("first", "second")
+xtabs(~ rep + rep.factor.dplyr, ff)
+levels(ff$oil.type)
+levels(ff$oil.type) <- c("oil1", "oil2", "oil3")
+summary(ff)
+```
+
+
+7. Make a new column that is a copy of the "oil.type" column, and change the order of levels using one of the recommended methods.
+
+```{r}
+ff$oil.type2 <- factor(ff$oil.type, levels = c("oil2", "oil1", "oil3"))
+xtabs(~ oil.type + oil.type2, ff)
+
+```
+
+
+# Section 2
+
+8. Make a copy of the data with just two of the oil treatment levels. Update this subset to remove the "missing" level from the appropriate factors.
+
+```{r}
+head(ff)
+summary(ff)
+ff$rep <- as.factor(ff$rep)
+levels(ff$rep) <- c("first", "second")
+summary(ff$rep)
+
+ff.oil2and3.v1 <- ff[ff$oil.type != "oil1", ] # safe when no NAs in oil.type
+ff.oil2and3.v2 <- ff[!ff$oil.type %in% "oil1", ] # will exclude NAs
+ff.oil2and3.v3 <- ff[ff$oil.type %in% c("oil2", "oil3"), ]
+
+ff.oil2and3.dplyr <- filter(ff, oil.type %in% c("oil2", "oil3"))
+
+summary(ff.oil2and3.v3)
+
+levels(ff.oil2and3.v3$oil.type)
+
+ff.oil2and3.v3$oil.type.clean <- factor(ff.oil2and3.v3$oil.type, levels = c("oil2", "oil3"))
+summary(ff.oil2and3.v3)
+xtabs(~ oil.type + oil.type.clean, ff.oil2and3.v3)
+
+ff.subset.clean <- droplevels(ff.oil2and3.v3)
+summary(ff.subset.clean)
+```
+
+
+9. Run the code below and imagine this is data from a few new people. Create a new data frame that appends this new data to the original data.  What if there is something different about these new people? How can you keep track of that after appending?
+
+```{r}
+
+```
+
+
+10. Run the code below and imagine this is a separate table of data about participants. Merge this with the original data, using both base R and `dplyr` functions.
+
+```{r}
+levels(ff.subset.clean$participant)
+unique(ff.subset.clean$participant)
+
+# SIDE NOTE: unique() on a data.frame drops duplicate rows!
+
+set.seed(87)
+people.data <- data.frame(subject = c("3", "15", "19", "70", "71"),
+                          age = sample(20:50, 5, replace = TRUE),
+                          like.burgers = sample(c(TRUE, FALSE), 5, replace = TRUE, prob = c(.7, .3)))
+people.data
+
+ff.basemerge <- merge(ff, people.data) # wrong!
+nrow(ff.basemerge)
+
+# try again
+ff.basemerge <- merge(x = ff, y = people.data, 
+                      by.x = "participant",
+                      by.y = "subject") # default all = FALSE
+nrow(ff.basemerge)
+head(ff.basemerge)
+summary(ff.basemerge$participant)
+
+# this means, "join by these two columns"
+ff.innerjoin <- inner_join(ff, people.data, 
+                           by = c("participant", "subject"))
+ff.innerjoin <- inner_join(ff, people.data,
+                           by = c("participant" = "subject"))
+summary(ff.innerjoin)
+
+ff.left <- left_join(ff, people.data,
+                     by = c("participant" = "subject"))
+nrow(ff.left)
+nrow(ff)
+summary(ff.left)
+```
+
+
+11. Back to just the original data, plot a histogram of the "potato" rating values.
+
+```{r}
+ff <- french_fries
+ggplot(ff, aes(x = potato)) + geom_histogram()
+ggplot(ff, aes(potato)) + geom_histogram(binwidth = .3)
+
+ggplot(ff, aes(x = potato, y = grassy)) + geom_point()
+
+```
+
+
+12. Create a subset of the data that only looks at the "potato" dimension of flavor, and subsets to only positive (i.e., non-zero) values.  Plot a histogram of this subsetted data to confirm that you got rid of zeros.
+
+```{r}
+ff <- french_fries
+ff.nozero <- filter(ff, potato > 0)
+ggplot(ff, aes(potato)) + geom_histogram(binwidth = .05)
+ggplot(ff.nozero, aes(potato)) + geom_histogram(binwidth = .05)
+ggplot(filter(ff, potato > 0), aes(potato)) +
+  geom_histogram(binwidth = .05)
+
+
+
+```
+
+
+13. Log-transform and plot the "potato" values for this subset 
+
+```{r}
+ff.nozero$log.potato <- log(ff.nozero$potato)
+ggplot(ff.nozero, aes(log.potato)) + geom_histogram()
+
+ggplot(ff.nozero, aes(log(potato))) + geom_histogram()
+
+
+
+```
+

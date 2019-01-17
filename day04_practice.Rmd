@@ -1,0 +1,139 @@
+---
+title: "Day 4 Practice"
+output: html_document
+---
+
+0. Make a copy of the `iris` data set.  Use `sample()` to make an additional "scrambled" version of the data set. 
+
+```{r}
+my.iris <- iris
+my.iris.scrambled <- my.iris[sample(nrow(my.iris)), ]
+head(my.iris)
+head(my.iris.scrambled)
+summary(my.iris)
+summary(my.iris.scrambled)
+
+```
+
+1. Using `summary()`, identify a factor in the iris data
+
+```{r}
+summary(my.iris)
+class(my.iris$Species)
+
+```
+
+Species is a factor. The summary gives counts at the different levels, which looks like a factor, and I can confirm that with `class()`
+
+2. Use subsetting (with logicals) to create a data frame of just the virginica species, then re-run `summary()` to check. Then "clean up" the Species factor so that it only has one level. Show how this works for both the original and the "scrambled" data frame.
+
+```{r}
+virginicas <- my.iris[my.iris$Species %in% "virginica", ]
+summary(virginicas)
+virginicas <- droplevels(virginicas)
+summary(virginicas)
+
+virginicas.scrambled <- droplevels(my.iris.scrambled[my.iris.scrambled$Species %in% "virginica", ])
+summary(virginicas.scrambled)
+```
+
+3. In the full data set (your copy), create different versions of the Species column:
+   a. a numeric vector
+   b. a character vector
+   
+```{r}
+my.iris$SpeciesNum <- as.numeric(my.iris$Species)
+my.iris$SpeciesChar <- as.character(my.iris$Species)
+```
+
+4. Use `xtabs()` to see how the values in these new columns line up with the original factor column.
+
+```{r}
+xtabs(~ Species + SpeciesNum, my.iris)
+xtabs(~ Species + SpeciesChar, my.iris)
+```
+
+5. Create another column that is a copy of the factor column. Now, recode this new column so that the factor levels have new names. 
+
+```{r}
+my.iris$Species2 <- my.iris$Species
+levels(my.iris$Species2) <- c("SETO", "VERS", "VIRG")
+xtabs(~ Species + Species2, my.iris)
+```
+
+6. Check the order of levels of Species with `levels()`. Create a new column from this factor, changing the order of the levels, using:
+  a. `relevel()`
+  b. `reorder()`
+  c. `factor()`
+
+```{r}
+my.iris$Species3 <- relevel(my.iris$Species, "versicolor")
+levels(my.iris$Species3)
+xtabs(~ Species + Species3, my.iris)
+
+my.iris$SpeciesNewNum <- ifelse(my.iris$Species %in% "setosa", 3, 
+                                ifelse(my.iris$Species %in% "versicolor", 1,
+                                       ifelse(my.iris$Species %in% "virginica", 2, NA)))
+my.iris$Species4 <- reorder(my.iris$Species, my.iris$SpeciesNewNum)
+levels(my.iris$Species4)
+xtabs(~ Species + Species4, my.iris)
+
+my.iris$Species5 <- factor(my.iris$Species, levels = c("virginica", "setosa", "versicolor"))
+levels(my.iris$Species5)
+xtabs(~ Species + Species5, my.iris)
+
+```
+
+7. Explore coersion! Try to make a series of vectors with combinations from each of these data types:
+  - numeric
+  - character
+  - factor
+  - logical
+
+For each combination, see what happens, by using `typeof()`, `class()` and `print()` before and after.
+
+```{r}
+c(FALSE, TRUE, 3)
+class(c(FALSE, TRUE, 3))
+
+c(FALSE, TRUE, "three")
+class(c(FALSE, TRUE, "three"))
+
+c("1", 2, 3)
+class(c("1", 2, 3))
+
+class(as.factor("one"))
+c(as.factor("one"), 2, 33)
+class(c(as.factor("one"), 2, 33))
+
+c(as.factor("one"), "two", "three")
+class(c(as.factor("one"), "two", "three"))
+
+x <- as.factor("one")
+x
+as.character(x)
+
+c(as.factor("one"), FALSE)
+class(c(as.factor("one"), FALSE))
+
+x <- as.factor(c("false", "true"))
+x
+class(x)
+c(x, FALSE, TRUE)
+class(c(x, FALSE, TRUE))
+
+c("false", "true", FALSE, TRUE)
+class(c("false", "true", FALSE, TRUE))
+
+x <- 1
+xL <- 1L
+typeof(x)
+typeof(xL)
+class(x)
+class(xL)
+x <- 1:10
+typeof(factor(x))
+class(factor(x))
+
+```
+

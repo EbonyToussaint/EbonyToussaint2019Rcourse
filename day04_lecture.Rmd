@@ -1,0 +1,300 @@
+---
+title: "Day 4 Lecture"
+output: html_document
+---
+
+# Today's agenda
+
+  - Review & questions
+  - Character/string data
+  - Factors
+  - Excursion: simple data frame manipulation, `xtabs()`
+  - PRACTICE: working with factors, part 1
+  - Special values: NA/NULL/Inf/NaN
+  - PRACTICE: data type coersion
+  - Lists
+  - Creating data frames from scratch
+  - Combining data frames
+  - PRACTICE: binding & merging
+
+# Review
+  - Go over Day 3 Practice
+  - Day 3 Homework example
+  - Knitting notes
+
+# Characters
+  - more primitive than factors
+  - can manipulate with regular expressions, other text functions
+
+Some handy text stuff
+
+```{r}
+# quotes
+
+x <- "a string"
+x
+y <- 'also a string'
+y
+z <- "this is a 'string' too"
+z
+w <- 'this thing is also a "string"'
+w
+# w.wrong <- "this thing is also a ""string""
+
+# cat(), print()
+print(x)
+cat(x)
+
+cat(x, file = "cat_example.txt")
+
+sample.ttest <- t.test(rnorm(20, 0, 1), rnorm(20, 2, 1))
+sample.ttest
+print(sample.ttest)
+printed.ttest <- print(sample.ttest)
+
+# special characters: \t, \n, "escaping"
+x <- "here's a cool result: 10"
+cat(x)
+y <- "here's a cool result:\t10"
+cat(y)
+z <- "here's a cool result:\n\n\t\t\t10"
+cat(z)
+
+cat("some\ntext")
+cat("some\\ntext")
+cat("some\"text")
+
+# nchar()
+nchar("hello")
+length("hello")
+
+# paste(), strsplit()
+paste("hello", "there")
+?paste
+
+paste("hello", "there", sep = "")
+x <- c("here", "are", "some", "strings")
+x
+
+paste("prefix", x, sep = "")
+
+paste(x, collapse = " ")
+
+x
+y <- paste(x, "suffix", sep = "_")
+y
+
+strsplit(y, split = "_")
+
+z <- paste(x, "suffix", sep = ".")
+z
+
+strsplit(z, split = ".")
+
+strsplit(z, split = "\\.")
+
+# stringr package
+
+# grep(), grepl(), gsub()
+x
+grep("here", x)
+grep("e", x)
+
+grepl("here", x)
+
+gsub("e", "E", x)
+gsub("e", "", x)
+
+longer.thing <- c("10F5657", "59J4957", "30K16238")
+gsub("\\d+\\w(\\d+)", "\\1", longer.thing)
+
+gsub("(\\d+)(\\w)(\\d+)", "\\2", longer.thing)
+longer.thing2 <- c("10F5657ggjgjjg", "59J4957sfs", "30K16238eee")
+gsub("(\\d+)(\\w)(\\d+)", "\\2", longer.thing2)
+
+gsub("(\\d+)(\\w)(\\d+)", "\\1 \\3", longer.thing)
+?regex
+
+
+
+```
+
+# Factors
+  - Actually numbers under the hood
+  - Act like numbers + labels
+  - VERY useful for many kinds of analyses
+  - if a column is a *property* of data (not a measure itself), factors are usually best
+    - groupings = good as factors
+    - conditions = good as factors
+  - if a column is *data*, maybe consider keeping it a string
+    - free response answers = bad as factors
+  - `as.factor()` coerces to a factor
+  - `factor()` creates a factor
+  - factors have *levels*: categories
+  - `stringsAsFactors` : option for how to read in character vectors
+    - = FALSE if you don't want to read in characters as factors
+
+```{r}
+# factor()
+x <- c(rep("a", 20), rep("b", 20), rep("c", 20))
+x
+summary(x)
+x.factor <- factor(x)
+summary(x.factor)
+
+# levels()
+levels(x.factor)
+
+# summary()
+
+# subsetting
+sleep
+mysleep <- sleep
+summary(mysleep)
+class(mysleep$group)
+
+levels(mysleep$group)
+
+mysleep.group1 <- mysleep[mysleep$group == "1", ]
+summary(mysleep.group1)
+
+# droplevels
+mysleep.group1 <- droplevels(mysleep.group1)
+summary(mysleep.group1)
+
+# changing levels (labels)
+mysleep <- sleep
+levels(mysleep$group)
+
+levels(mysleep$group) <- c("pre", "post")
+levels(mysleep$group)
+summary(mysleep)
+head(mysleep)
+
+mysleep.bad <- sleep
+levels(mysleep.bad$group) <- c("2", "1")
+summary(mysleep.bad)
+
+mysleep.badgroup1 <- mysleep.bad[mysleep$group == "1", ]
+summary(mysleep.badgroup1)
+
+mysleep.badgroup1.wtf <- mysleep.bad[mysleep$group == 1, ]
+summary(mysleep.badgroup1.wtf) # Scott was surprised this worked!
+
+summary(mysleep.badgroup1$group)
+as.numeric(mysleep.badgroup1$group)
+as.numeric(as.character(mysleep.badgroup1$group))
+
+colnames(mysleep)
+
+colnames(mysleep) <- c("extra sleep", "treatment group", "subject")
+head(mysleep)
+
+# re-ordering
+mysleep <- sleep
+levels(mysleep$group) <- c("pre", "post")
+summary(mysleep)
+# levels(mysleep$group) <- c("post", "pre") # CHANGES DATA, NOT ORDER OF LEVELS)
+# levels(mysleep$group)
+mysleep$group2 <- mysleep$group
+head(mysleep)
+mysleep$group2 <- factor(mysleep$group2, levels = c("post", "pre"))
+summary(mysleep)
+head(mysleep)
+mysleep$group2 <- factor(mysleep$group2, levels = c("post", "pre"))
+mysleep$group2 <- factor(mysleep$group2, levels = c("post", "pre", "delayed post"))
+summary(mysleep)
+# mysleep$group2 <- factor(mysleep$group2, levels = c("pos", "pre", "delayed post"))
+# summary(mysleep)
+
+
+```
+
+# Data manipulation excursion
+## Creating (simple) new columns
+
+```{r}
+# single value
+mysleep$experiment <- 1
+
+mysleep$group3 <- mysleep$group
+# using subsetting
+summary(mysleep)
+
+# ifelse()
+mysleep$sleeplevel <- ifelse(mysleep$extra >= 1, "high", "low")
+mysleep$sleeplevel <- ifelse(mysleep$extra >= 1, "high", 
+                             ifelse(mysleep$extra < 1, "low", NA))
+summary(mysleep)
+mysleep$sleeplevel <- as.factor(ifelse(mysleep$extra >= 1, "high", "low"))
+summary(mysleep)
+mysleep$sleeplevel <- factor(ifelse(mysleep$extra >= 1, "high", "low"), levels = c("low", "high"))
+
+summary(mysleep)
+
+```
+
+## Using xtabs() to check coding/cross-tabs
+
+```{r}
+xtabs(~ group + group2, data = mysleep)
+xtabs(~ sleeplevel + extra, data = mysleep)
+xtabs(~ extra + sleeplevel, data = mysleep)
+xtabs(~ extra + sleeplevel + group, data = mysleep)
+
+```
+
+# PRACTICE: #0 -- #6
+
+# NAs, NULLs
+
+## NAs
+  - missing data
+  - can be a huge pain
+  - hugely important to handle properly!
+  - no universal "handle NAs" or "ignore NAs" argument
+  - sometimes `na.rm = TRUE` (like for `mean()`)
+  - sometimes it's other stuff
+  - `cor()` use = "pairwise.complete.obs"
+  - no universal "deal with NAs" argument
+  
+```{r}
+
+```
+
+## NULL
+  - another special value
+  - means "nothing" or "doesn't exist" (contrast with "missing" or "unknown")
+
+```{r}
+
+```
+
+## Inf, -Inf, NaN
+  - can sometimes result from mathematical operations
+  - helpful to be able to identify, locate them
+
+```{r}
+x <- 1/0
+x
+y <- -1/0
+y
+z <- sqrt(-4)
+z
+
+```
+
+# Data types, classes, & coersion
+
+```{r}
+# typeof()
+
+# class()
+
+```
+
+`is.X` family of functions (`is.factor()`, `is.na()`, `is.finite()`, etc.)
+`as.X` family of functions (`as.factor()`, `as.numeric()`, `as.data.frame()`, etc.)
+
+# PRACTICE: #7
+
