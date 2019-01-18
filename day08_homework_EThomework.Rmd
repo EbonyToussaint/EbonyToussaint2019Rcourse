@@ -1,0 +1,71 @@
+---
+title: "Day 8 Homework"
+output: html_document
+---
+#Load data
+```{r}
+library(readxl)
+National_Congregations_Study_Panel_Dataset_1998_and_2006_2007_ <- read_excel("~/Downloads/National Congregations Study, Panel Dataset (1998 and 2006-2007).XLSX")
+```
+
+#Rename data
+```{r}
+NCS <- National_Congregations_Study_Panel_Dataset_1998_and_2006_2007_
+```
+
+#View data
+```{r}
+View(NCS)
+summary(NCS) #kind of like describe, summarize, or codebook in STATA
+```
+
+#Random Questions to Dr. SRJ: 
+#1 - How do you implement survey weights?
+
+Find two repetitive things that you would like to be able to do with your data.  This can be something having to do with coding variables, or saving plots, or running an analysis multiple times on different subsets, etc. etc.  Just try to find something where you would normally need to "copy and paste" sections of code, varying only one or two things.  Figure out how to use a loop to accomplish this.  
+
+For BOTH of these things, take the following steps:
+
+1. Articulate what you want to do (verbally)
+
+I want the religious traditions cateogorized by year. Religious traditions collected in 1998 will be group 1 and those in 2006 will be group 2. Not something I would do, but for the purpose of this exercise, I'm curious.
+
+2. Give some code that illustrates the "copy and paste" method.  This can just show a couple of steps.  That is, if you would be running through a bunch of iterations, just copy and paste a couple of times, not everything.
+
+```{r}
+NCS <- National_Congregations_Study_Panel_Dataset_1998_and_2006_2007_
+summary(NCS)
+
+summary(NCS[NCS$TRAD3_98 == "1", ])
+summary(NCS[NCS$TRAD3_06 == "2", ])
+
+for(this.group in c("1", "2")) {
+  print(summary(NCS[NCS$TRAD3_06 == this.group, ])) 
+}
+for(i in c("1", "2")) {
+  print(i)
+}
+```
+
+
+3. Work this code into a loop format, so that no copy & paste is neccesary.  You will need to set up a "counter" variable that cycles through various values (which do not have to be numeric), changing with every pass through the loop.  But you may also need to make other changes to your code to accommodate the loop.
+
+```{r}
+#I did a different loop for this question than in question 2, but I'm
+#sure this is incorrect
+?Control
+HLTHED06 <- rnorm(30)
+print("This loop calculates the mean of vector HLTHED06")
+
+mean(HLTHED06) 
+
+for(i in 1:50) {
+  mean(HLTHED06)[i] <- mean(HLTHED06)[i]+mean(HLTHED06)[i] / 50
+  print(mean(HLTHED06)[i])
+}
+
+print(i)
+```
+
+
+As usual, send me your .Rmd file with any data I need to replicate your results.
